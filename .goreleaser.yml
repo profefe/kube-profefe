@@ -40,7 +40,7 @@ dockers:
     goarch: amd64
     image_templates:
     - "gianarb/kprofefe:latest"
-    - "gianarb/kprofefe:v{{ .Tag }}"
+    - "gianarb/kprofefe:{{ .Tag }}"
     #- "profefe/kprofefe:latest"
     #- "profefe/kprofefe:v{{ .Tag }}"
     dockerfile: Dockerfile.gorelease
