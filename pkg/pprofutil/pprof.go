@@ -3,6 +3,7 @@ package pprofutil
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -11,6 +12,7 @@ import (
 
 const (
 	DefaultProfilePath = "/debug/pprof"
+	DefaultProfilePort = 6060
 )
 
 func GatherAllByPod(ctx context.Context, host string, pod corev1.Pod, forwardedPort int) (map[Profile]*profile.Profile, error) {
@@ -18,7 +20,7 @@ func GatherAllByPod(ctx context.Context, host string, pod corev1.Pod, forwardedP
 	if rawPath, ok := pod.Annotations["profefe.com/path"]; ok && rawPath != "" {
 		path = rawPath
 	}
-	return GatherAll(ctx, fmt.Sprintf("%s:%d/%s", host, forwardedPort, path))
+	return GatherAll(ctx, fmt.Sprintf("%s:%d%s", host, forwardedPort, path))
 }
 
 // GatherAll downloads all profile types from address.
@@ -50,4 +52,14 @@ func GatherAll(ctx context.Context, addr string) (map[Profile]*profile.Profile, 
 	}
 
 	return profs, err
+}
+
+func GetProfefePortByPod(pod corev1.Pod) int {
+	port := DefaultProfilePort
+	if rawPort, ok := pod.Annotations["profefe.com/port"]; ok && rawPort != "" {
+		if i, err := strconv.Atoi(rawPort); err == nil {
+			port = i
+		}
+	}
+	return port
 }

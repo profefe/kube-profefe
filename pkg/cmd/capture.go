@@ -168,7 +168,7 @@ profefe.`)
 
 func writeProfiles(ctx context.Context, pClient *profefe.Client, profiles map[pprofutil.Profile]*profile.Profile, target corev1.Pod) error {
 	for profileType, profile := range profiles {
-		profefeType := profefe.NewProfileTypeFromString(profile.PeriodType.Type)
+		profefeType := profefe.NewProfileTypeFromString(profileType.String())
 		if profefeType == profefe.UnknownProfile {
 			println("unknown profile type: :" + profile.PeriodType.Type)
 			continue

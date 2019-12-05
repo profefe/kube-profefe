@@ -8,6 +8,13 @@ builds:
 - id: "kubectl-profefe"
   main: ./cmd/kubectl-profefe
   binary: kubectl-profefe
+  env:
+    - CGO_ENABLED=0
+- id: "kprofefe"
+  main: ./cmd/kprofefe
+  binary: kprofefe
+  env:
+    - CGO_ENABLED=0
 archives:
 - replacements:
     darwin: Darwin
@@ -25,3 +32,14 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
+# .goreleaser.yml
+dockers:
+  -
+    binaries:
+    - kprofefe
+    goos: linux
+    goarch: amd64
+    image_templates:
+    - "profefe/kprofefe:latest"
+    - "profefe/kprofefe:v{{ .Tag }}"
+    dockerfile: Dockerfile.gorelease
