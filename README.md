@@ -34,6 +34,21 @@ The annotations are:
 * `profefe.com/path=/debug/pprof` tells kube-profefe where to look for a pprof http
   server. By default it is `/debug/pprof`.
 
+### Install kubectl-profefe
+
+`kubectl-profefe` is a kubectl plugin designed to gather profiles from your
+local laptop and store them locally or in profefe.
+
+In the [release page in
+github](https://github.com/gianarb/kube-profefe/releases) we push binaries and
+containers (thanks goreleaser), you can download the tar.gz for your
+architecture and move the `kubectl-profefe` in your `PATH`. In this way it will
+work as kubectl plugin:
+
+```
+kubectl profefe --help
+```
+
 ### Getting Started with kubectl-profefe
 
 Start minikube and deploy this pod:
