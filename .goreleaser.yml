@@ -32,7 +32,6 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
-# .goreleaser.yml
 dockers:
   -
     binaries:
