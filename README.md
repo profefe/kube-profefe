@@ -66,3 +66,10 @@ The profiles are stored inside your `/tmp` directory (you can change it with
 ```
 go tool pprof /tmp/profile-goroutine-influxdb-v2-1575552135.pb.gz
 ```
+
+If you have a profefe up and running you can push your profiles there other than
+locally:
+
+```
+kubectl profefe capture influxdb-v2 --profefe-hostport http://localhost:10100
+```
