@@ -31,6 +31,7 @@ func NewProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
 	flags.AddFlagSet(rootCmd.PersistentFlags())
 	kubeConfigFlags.AddFlags(flags)
 	kubeResouceBuilderFlags.WithLabelSelector("")
+	kubeResouceBuilderFlags.WithAllNamespaces(false)
 	kubeResouceBuilderFlags.AddFlags(flags)
 
 	captureCmd := NewCaptureCmd(kubeConfigFlags, kubeResouceBuilderFlags, streams)

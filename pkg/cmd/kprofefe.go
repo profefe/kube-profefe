@@ -125,6 +125,7 @@ func NewKProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
 	flags.StringVar(&ProfefeHostPort, "profefe-hostport", "http://localhost:10100", `where profefe is located`)
 	kubeConfigFlags.AddFlags(flags)
 	kubeResouceBuilderFlags.WithLabelSelector("")
+	kubeResouceBuilderFlags.WithAllNamespaces(false)
 	kubeResouceBuilderFlags.AddFlags(flags)
 
 	return cmd
