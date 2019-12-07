@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
+	"sync"
 
 	"github.com/gianarb/kube-profefe/pkg/kubeutil"
 	"github.com/gianarb/kube-profefe/pkg/pprofutil"
 	"github.com/gianarb/kube-profefe/pkg/profefe"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -18,8 +19,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-func NewKProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
-	flags := pflag.NewFlagSet("kubectl-profefe", pflag.ExitOnError)
+func NewKProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *cobra.Command {
+	flags := pflag.NewFlagSet("kprofefe", pflag.ExitOnError)
 	pflag.CommandLine = flags
 
 	kubeConfigFlags := genericclioptions.NewConfigFlags(false)
@@ -32,6 +33,11 @@ func NewKProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
 			c.SetOutput(streams.ErrOut)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx := context.Background()
+			logger = logger.With(
+				zap.Strings("args", args),
+				zap.String("profefe-hostport", ProfefeHostPort),
+			)
 			var config *rest.Config
 			var err error
 
@@ -40,15 +46,15 @@ func NewKProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
 				config, err = kubeConfigFlags.ToRESTConfig()
 			}
 			if err != nil {
-				panic(err)
+				logger.Fatal("Impossible to retrive a kubernetes config", zap.Error(err))
 			}
 			if config == nil {
-				panic("woww")
+				logger.Fatal("Impossible to retrive a kubernetes config")
 			}
 			// creates the clientset
 			clientset, err := kubernetes.NewForConfig(config)
 			if err != nil {
-				panic(err.Error())
+				logger.Fatal("Kubernetes Client creation failed", zap.Error(err))
 			}
 
 			// Contains the pool of pods that we need to gather profiles from
@@ -56,13 +62,17 @@ func NewKProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
 
 			namespace := kubeutil.GetNamespaceFromKubernetesFlags(kubeConfigFlags, kubeResouceBuilderFlags)
 
+			logger = logger.With(
+				zap.String("namespace", namespace),
+			)
+
 			// If the arguments are more than zero we should check by pod name
 			// (args == resourceName)
 			if len(args) > 0 {
 				for _, podName := range args {
 					pod, err := kubeutil.GetPodByName(clientset, namespace, podName, metav1.GetOptions{})
 					if err != nil {
-						println(err.Error())
+						logger.Warn("Pod not found", zap.Error(err))
 						continue
 					}
 					selectedPods = append(selectedPods, *pod)
@@ -72,52 +82,46 @@ func NewKProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
 					LabelSelector: *kubeResouceBuilderFlags.LabelSelector,
 				})
 				if err != nil {
-					println(err.Error())
-					os.Exit(1)
+					logger.Fatal("Error retrieving list of pods from kubernetes api", zap.Error(err))
 				}
 			}
 
 			// If the selectedPods are zero there is nothing to do.
 			if len(selectedPods) == 0 {
-				println("there are not pod that matches your research")
-				os.Exit(1)
+				logger.Fatal("No pods to profile")
 			}
 
-			println(fmt.Sprintf("selected %d pod/s", len(selectedPods)))
+			logger.Info("Starting to profile...", zap.Int("selected_pods_count", len(selectedPods)))
 
 			pClient := profefe.NewClient(profefe.Config{
 				HostPort: ProfefeHostPort,
 			}, http.Client{})
 
-			for _, target := range selectedPods {
-				targetPort := pprofutil.GetProfefePortByPod(target)
-				profiles, err := pprofutil.GatherAllByPod(context.Background(), fmt.Sprintf("http://%s", target.Status.PodIP), target, targetPort)
-				if err != nil {
-					panic(err)
-				}
-				for profileType, profile := range profiles {
-					profefeType := profefe.NewProfileTypeFromString(profileType.String())
-					if profefeType == profefe.UnknownProfile {
-						println("unknown profile type: :" + profileType.String())
-						continue
+			wg := sync.WaitGroup{}
+			wg.Add(10)
+
+			poolC := make(chan corev1.Pod)
+			for ii := 0; ii < 10; ii++ {
+				go func(c chan corev1.Pod) {
+					for {
+						pod, more := <-c
+						if more == false {
+							wg.Done()
+							return
+						}
+						do(ctx, logger, pClient, pod)
 					}
-					saved, err := pClient.SavePprof(context.Background(), profefe.SavePprofRequest{
-						Profile:    profile,
-						Service:    target.Name,
-						InstanceID: target.Status.HostIP,
-						Type:       profefeType,
-						Labels: map[string]string{
-							"namespace": target.Namespace,
-							"from":      "kube-profefe",
-						},
-					})
-					if err != nil {
-						println(fmt.Sprintf("%s type=%s profile_type=%s", err.Error(), profefeType, profile.PeriodType.Type))
-					} else {
-						println(fmt.Sprintf("%s/api/0/profiles/%s type=%s", ProfefeHostPort, saved.Body.ID, profefeType))
-					}
-				}
+				}(poolC)
+
 			}
+
+			for _, target := range selectedPods {
+				poolC <- target
+			}
+
+			close(poolC)
+			wg.Wait()
+			logger.Info("It is all done bye...")
 		},
 	}
 
@@ -129,4 +133,35 @@ func NewKProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
 	kubeResouceBuilderFlags.AddFlags(flags)
 
 	return cmd
+}
+
+func do(ctx context.Context, l *zap.Logger, pClient *profefe.Client, target corev1.Pod) {
+	logger := l.With(zap.String("pod", target.Name))
+	targetPort := pprofutil.GetProfefePortByPod(target)
+	profiles, err := pprofutil.GatherAllByPod(context.Background(), fmt.Sprintf("http://%s", target.Status.PodIP), target, targetPort)
+	if err != nil {
+		panic(err)
+	}
+	for profileType, profile := range profiles {
+		profefeType := profefe.NewProfileTypeFromString(profileType.String())
+		if profefeType == profefe.UnknownProfile {
+			logger.Warn("Unknown profile type it can not be sent to profefe. Skip this profile")
+			continue
+		}
+		saved, err := pClient.SavePprof(context.Background(), profefe.SavePprofRequest{
+			Profile:    profile,
+			Service:    target.Name,
+			InstanceID: target.Status.HostIP,
+			Type:       profefeType,
+			Labels: map[string]string{
+				"namespace": target.Namespace,
+				"from":      "kube-profefe",
+			},
+		})
+		if err != nil {
+			logger.Warn("Unknown profile type it can not be sent to profefe. Skip this profile", zap.Error(err))
+		} else {
+			logger.Info("Profile stored in profefe.", zap.String("id", saved.Body.ID), zap.String("profefe_profile_type", profefeType.String()), zap.String("url", fmt.Sprintf("%s/api/0/profiles/%s type=%s", ProfefeHostPort, saved.Body.ID, profefeType)))
+		}
+	}
 }
