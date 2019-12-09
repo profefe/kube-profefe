@@ -34,7 +34,7 @@ var (
 func NewCaptureCmd(configFlag *genericclioptions.ConfigFlags, rbFlags *genericclioptions.ResourceBuilderFlags, streams genericclioptions.IOStreams) *cobra.Command {
 	captureCmd := &cobra.Command{
 		Use:   "capture",
-		Short: "",
+		Short: "Capture gathers profiles for a pod or a set of them. If can filter by namespace and via label selector.",
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			c.SetOutput(streams.ErrOut)
 		},

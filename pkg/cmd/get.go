@@ -7,7 +7,7 @@ import (
 func NewGetCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get",
-		Short: "",
+		Short: "Display one or many resources",
 		Run:   func(cmd *cobra.Command, args []string) {},
 	}
 

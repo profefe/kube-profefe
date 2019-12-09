@@ -21,7 +21,7 @@ func NewProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
 
 	rootCmd := &cobra.Command{
 		Use:   "kubectl-profefe",
-		Short: "My root command",
+		Short: "It is a kubectl plugin that you can use to retrieve and manage profiles in Go.",
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			c.SetOutput(streams.ErrOut)
 		},

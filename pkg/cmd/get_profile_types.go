@@ -7,8 +7,7 @@ import (
 
 func NewGetProfileTypesCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "profile-types",
-		Short: "Retrieve supported profile types",
+		Use: "profile-types",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			for _, v := range profefe.AllProfileTypes() {
 				println(v)

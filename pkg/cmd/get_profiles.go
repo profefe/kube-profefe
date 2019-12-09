@@ -22,8 +22,7 @@ func NewGetProfilesCmd() *cobra.Command {
 	flags := pflag.NewFlagSet("kprofefe", pflag.ExitOnError)
 
 	cmd := &cobra.Command{
-		Use:   "profiles",
-		Short: "Retrieve profiles from profefe",
+		Use: "profiles",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 			pClient := profefe.NewClient(profefe.Config{
