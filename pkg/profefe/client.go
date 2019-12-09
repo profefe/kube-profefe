@@ -14,6 +14,8 @@ import (
 
 type ProfileType int8
 
+var timeFormat = "2006-01-02T15:04:05"
+
 const (
 	UnknownProfile ProfileType = iota
 	CPUProfile
@@ -25,6 +27,18 @@ const (
 
 	OtherProfile = 127
 )
+
+func AllProfileTypes() []string {
+	return []string{
+		UnknownProfile.String(),
+		CPUProfile.String(),
+		HeapProfile.String(),
+		BlockProfile.String(),
+		MutexProfile.String(),
+		GoroutineProfile.String(),
+		ThreadcreateProfile.String(),
+	}
+}
 
 func (ptype ProfileType) String() string {
 	switch ptype {
@@ -98,6 +112,55 @@ func GetProfileType() []string {
 		ProfileTypeGoroutine,
 		ProfileTypeOther,
 	}
+}
+
+// GET
+// /api/0/profiles?service=<service>&type=<type>from=<created_from>&to=<created_to>&labels=<key=value,key=value>
+func (c *Client) GetProfiles(ctx context.Context, req GetProfilesRequest) (*GetProfilesResponse, error) {
+	buf := bytes.NewBuffer([]byte{})
+	r, err := http.NewRequestWithContext(ctx, "GET", c.HostPort+"/api/0/profiles", buf)
+
+	q := r.URL.Query()
+	q.Add("from", req.From.Format(timeFormat))
+	q.Add("to", req.To.Format(timeFormat))
+	q.Add("type", req.Type.String())
+	q.Add("service", req.Service)
+	r.URL.RawQuery = q.Encode()
+
+	resp, err := c.Do(r)
+	defer resp.Body.Close()
+	rr := &GetProfilesResponse{}
+
+	err = json.NewDecoder(resp.Body).Decode(rr)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == http.StatusOK {
+		return rr, nil
+	}
+	return nil, fmt.Errorf(rr.Error)
+}
+
+type GetProfilesRequest struct {
+	// service name
+	Service string
+	// cpu, heap, block, mutex, or goroutine
+	Type ProfileType
+	// a set of key-value pairs, e.g. "region=europe-west3,dc=fra,ip=1.2.3.4,version=1.0"
+	Labels map[string]string
+
+	From, To time.Time
+}
+
+type GetProfilesResponse struct {
+	Code  int    `json:"code"`
+	Error string `json:"error"`
+	Body  []struct {
+		ID        string    `json:"id"`
+		Type      string    `json:"type"`
+		Service   string    `json:"service"`
+		CreatedAt time.Time `json:"created_at"`
+	} `json:"body"`
 }
 
 // https://github.com/profefe/profefe#save-pprof-data
