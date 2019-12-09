@@ -39,6 +39,7 @@ func NewProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
 	flagsCapture.StringVar(&OutputDir, "output-dir", "/tmp", "Directory where to place the profiles")
 	captureCmd.Flags().AddFlagSet(flagsCapture)
 	rootCmd.AddCommand(captureCmd)
+	rootCmd.AddCommand(NewGetCmd())
 
 	return rootCmd
 }
