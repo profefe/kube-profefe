@@ -26,6 +26,10 @@ func NewKProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *co
 	kubeConfigFlags := genericclioptions.NewConfigFlags(false)
 	kubeResouceBuilderFlags := genericclioptions.NewResourceBuilderFlags()
 
+	if ProfefeHostPort == "" {
+		ProfefeHostPort = "http://localhost:10100"
+	}
+
 	cmd := &cobra.Command{
 		Use:   "kprofefe",
 		Short: "kprofefe collects profiles from inside a kubernetes cluster",

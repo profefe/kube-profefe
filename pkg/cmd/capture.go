@@ -27,8 +27,9 @@ const (
 )
 
 var (
-	OutputDir       string
-	ProfefeHostPort string
+	OutputDir        string
+	ProfefeHostPort  string
+	ProfefeHostPortE string
 )
 
 func NewCaptureCmd(configFlag *genericclioptions.ConfigFlags, rbFlags *genericclioptions.ResourceBuilderFlags, streams genericclioptions.IOStreams) *cobra.Command {
@@ -139,9 +140,9 @@ func NewCaptureCmd(configFlag *genericclioptions.ConfigFlags, rbFlags *genericcl
 				}
 
 				var pClient *profefe.Client
-				if ProfefeHostPort != "" {
+				if ProfefeHostPortE != "" {
 					pClient = profefe.NewClient(profefe.Config{
-						HostPort: ProfefeHostPort,
+						HostPort: ProfefeHostPortE,
 					}, http.Client{})
 				}
 
@@ -158,7 +159,7 @@ func NewCaptureCmd(configFlag *genericclioptions.ConfigFlags, rbFlags *genericcl
 	}
 	flagsCapture := pflag.NewFlagSet("kubectl-profefe-capture", pflag.ExitOnError)
 	flagsCapture.StringVar(&OutputDir, "output-dir", "/tmp", "Directory where to place the profiles")
-	flagsCapture.StringVar(&ProfefeHostPort, "profefe-hostport", "", `Where profefe
+	flagsCapture.StringVar(&ProfefeHostPortE, "profefe-hostport", "", `Where profefe
 is (eg http://localhost:10100). If not set the profiles will be store in
 your /tmp directory. When set the profiles will be only pushed in
 profefe.`)
@@ -189,7 +190,7 @@ func writeProfiles(ctx context.Context, pClient *profefe.Client, profiles map[pp
 			if err != nil {
 				println(fmt.Sprintf("%s type=%s profile_type=%s", err.Error(), profefeType, profile.PeriodType.Type))
 			} else {
-				println(fmt.Sprintf("%s/api/0/profiles/%s type=%s", ProfefeHostPort, saved.Body.ID, profefeType))
+				println(fmt.Sprintf("%s/api/0/profiles/%s type=%s", ProfefeHostPortE, saved.Body.ID, profefeType))
 			}
 		} else {
 			f, err := os.OpenFile(
