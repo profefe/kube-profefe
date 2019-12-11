@@ -39,8 +39,6 @@ dockers:
     goos: linux
     goarch: amd64
     image_templates:
-    - "gianarb/kprofefe:latest"
-    - "gianarb/kprofefe:{{ .Tag }}"
-    #- "profefe/kprofefe:latest"
-    #- "profefe/kprofefe:v{{ .Tag }}"
+    - "profefe/kprofefe:latest"
+    - "profefe/kprofefe:{{ .Tag }}"
     dockerfile: Dockerfile.gorelease
