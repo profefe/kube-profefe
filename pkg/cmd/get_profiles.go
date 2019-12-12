@@ -39,8 +39,8 @@ func NewGetProfilesCmd() *cobra.Command {
 				}
 			}
 
-			req.To = time.Now()
-			req.From = req.To.Add(-from)
+			req.To = time.Now().UTC()
+			req.From = req.To.Add(-from).UTC()
 
 			resp, err := pClient.GetProfiles(ctx, req)
 			if err != nil {
