@@ -25,7 +25,9 @@ func NewProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			c.SetOutput(streams.ErrOut)
 		},
-		Run: func(cmd *cobra.Command, args []string) {},
+		Run: func(cmd *cobra.Command, args []string) {
+			cmd.Help()
+		},
 	}
 
 	flags.AddFlagSet(rootCmd.PersistentFlags())
