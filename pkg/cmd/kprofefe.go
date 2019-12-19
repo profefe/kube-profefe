@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"sync"
 
+	backoff "github.com/cenkalti/backoff/v3"
 	"github.com/gianarb/kube-profefe/pkg/kubeutil"
 	"github.com/gianarb/kube-profefe/pkg/pprofutil"
 	"github.com/gianarb/kube-profefe/pkg/profefe"
+	"github.com/google/pprof/profile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
@@ -142,9 +144,18 @@ func NewKProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *co
 func do(ctx context.Context, l *zap.Logger, pClient *profefe.Client, target corev1.Pod) {
 	logger := l.With(zap.String("pod", target.Name))
 	targetPort := pprofutil.GetProfefePortByPod(target)
-	profiles, err := pprofutil.GatherAllByPod(context.Background(), fmt.Sprintf("http://%s", target.Status.PodIP), target, targetPort)
+	var profiles map[pprofutil.Profile]*profile.Profile
+	var err error
+	err = backoff.Retry(func() error {
+		profiles, err = pprofutil.GatherAllByPod(context.Background(), fmt.Sprintf("http://%s", target.Status.PodIP), target, targetPort)
+		if err != nil {
+			return err
+		}
+		return nil
+	}, backoff.NewExponentialBackOff())
 	if err != nil {
-		panic(err)
+		logger.Error("impossible to gather profiles", zap.Error(err))
+		return
 	}
 	for profileType, profile := range profiles {
 		profefeType := profefe.NewProfileTypeFromString(profileType.String())

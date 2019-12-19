@@ -4,6 +4,8 @@ github.com/BurntSushi/toml
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
+# github.com/cenkalti/backoff/v3 v3.1.1
+github.com/cenkalti/backoff/v3
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
 # github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c
