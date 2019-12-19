@@ -3,6 +3,7 @@ module github.com/gianarb/kube-profefe
 go 1.13
 
 require (
+	github.com/cenkalti/backoff/v3 v3.1.1
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20190410145444-c548f45dcf1d // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190410145444-c548f45dcf1d // indirect
