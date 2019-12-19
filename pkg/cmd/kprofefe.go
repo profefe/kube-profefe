@@ -176,7 +176,7 @@ func do(ctx context.Context, l *zap.Logger, pClient *profefe.Client, target core
 		if err != nil {
 			logger.Warn("Unknown profile type it can not be sent to profefe. Skip this profile", zap.Error(err))
 		} else {
-			logger.Info("Profile stored in profefe.", zap.String("id", saved.Body.ID), zap.String("profefe_profile_type", profefeType.String()), zap.String("url", fmt.Sprintf("%s/api/0/profiles/%s type=%s", ProfefeHostPort, saved.Body.ID, profefeType)))
+			logger.Info("Profile stored in profefe.", zap.String("id", saved.Body.ID), zap.String("profefe_profile_type", profefeType.String()), zap.String("url", fmt.Sprintf("%s/api/0/profiles/%s", ProfefeHostPort, saved.Body.ID)))
 		}
 	}
 }
