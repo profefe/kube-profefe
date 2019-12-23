@@ -125,6 +125,16 @@ func (c *Client) GetProfiles(ctx context.Context, req GetProfilesRequest) (*GetP
 	q.Add("to", req.To.Format(timeFormat))
 	q.Add("type", req.Type.String())
 	q.Add("service", req.Service)
+	labels := ""
+	isLabels := false
+	// Set labels as part of the profile and push them down to profefe
+	for k, v := range req.Labels {
+		isLabels = true
+		labels = labels + "," + k + "=" + v
+	}
+	if isLabels {
+		q.Add("labels", labels)
+	}
 	r.URL.RawQuery = q.Encode()
 
 	resp, err := c.Do(r)
@@ -169,10 +179,6 @@ type GetProfilesResponse struct {
 func (c *Client) SavePprof(ctx context.Context, req SavePprofRequest) (*SavePprofResponse, error) {
 	buf := bytes.NewBuffer([]byte{})
 	req.Profile.Write(buf)
-	labels := ""
-	for k, v := range req.Labels {
-		labels = labels + "," + k + "=" + v
-	}
 	r, err := http.NewRequest("POST", c.HostPort+"/api/0/profiles", buf)
 	if err != nil {
 		return nil, err
@@ -182,6 +188,17 @@ func (c *Client) SavePprof(ctx context.Context, req SavePprofRequest) (*SavePpro
 	q.Add("service", req.Service)
 	q.Add("instance_id", req.InstanceID)
 	q.Add("type", req.Type.String())
+	labels := ""
+	isLabels := false
+	// Set labels as part of the profile and push them down to profefe
+	for k, v := range req.Labels {
+		isLabels = true
+		labels = labels + "," + k + "=" + v
+		req.Profile.SetLabel(k, []string{v})
+	}
+	if isLabels {
+		q.Add("labels", labels)
+	}
 	r.URL.RawQuery = q.Encode()
 
 	r.Header.Add("UserAgent", c.UserAgent)
