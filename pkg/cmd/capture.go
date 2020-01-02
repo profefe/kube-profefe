@@ -177,7 +177,7 @@ func writeProfiles(ctx context.Context, pClient *profefe.Client, profiles map[pp
 		// if the profefe client is not null the profile needs to be pushed to
 		// profefe server, otherwise it is written into a file locally
 		if pClient != nil {
-			saved, err := pClient.SavePprof(ctx, profefe.SavePprofRequest{
+			req := profefe.SavePprofRequest{
 				Profile:    profile,
 				Service:    target.Name,
 				InstanceID: target.Status.HostIP,
@@ -186,7 +186,12 @@ func writeProfiles(ctx context.Context, pClient *profefe.Client, profiles map[pp
 					"namespace": target.Namespace,
 					"from":      "kube-profefe",
 				},
-			})
+			}
+			if serviceName, ok := target.Annotations["profefe.com/service"]; ok && serviceName != "" {
+				req.Service = serviceName
+				req.Labels["pod"] = target.Name
+			}
+			saved, err := pClient.SavePprof(context.Background(), req)
 			if err != nil {
 				println(fmt.Sprintf("%s type=%s profile_type=%s", err.Error(), profefeType, profile.PeriodType.Type))
 			} else {

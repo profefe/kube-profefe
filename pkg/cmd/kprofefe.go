@@ -163,7 +163,7 @@ func do(ctx context.Context, l *zap.Logger, pClient *profefe.Client, target core
 			logger.Warn("Unknown profile type it can not be sent to profefe. Skip this profile")
 			continue
 		}
-		saved, err := pClient.SavePprof(context.Background(), profefe.SavePprofRequest{
+		req := profefe.SavePprofRequest{
 			Profile:    profile,
 			Service:    target.Name,
 			InstanceID: target.Status.HostIP,
@@ -172,7 +172,12 @@ func do(ctx context.Context, l *zap.Logger, pClient *profefe.Client, target core
 				"namespace": target.Namespace,
 				"from":      "kube-profefe",
 			},
-		})
+		}
+		if serviceName, ok := target.Annotations["profefe.com/service"]; ok && serviceName != "" {
+			req.Service = serviceName
+			req.Labels["pod"] = target.Name
+		}
+		saved, err := pClient.SavePprof(context.Background(), req)
 		if err != nil {
 			logger.Warn("Unknown profile type it can not be sent to profefe. Skip this profile", zap.Error(err))
 		} else {
