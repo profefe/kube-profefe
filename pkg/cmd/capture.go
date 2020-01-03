@@ -16,6 +16,7 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -32,7 +33,7 @@ var (
 	ProfefeHostPortE string
 )
 
-func NewCaptureCmd(configFlag *genericclioptions.ConfigFlags, rbFlags *genericclioptions.ResourceBuilderFlags, streams genericclioptions.IOStreams) *cobra.Command {
+func NewCaptureCmd(logger *zap.Logger, configFlag *genericclioptions.ConfigFlags, rbFlags *genericclioptions.ResourceBuilderFlags, streams genericclioptions.IOStreams) *cobra.Command {
 	captureCmd := &cobra.Command{
 		Use:   "capture",
 		Short: "Capture gathers profiles for a pod or a set of them. If can filter by namespace and via label selector.",
@@ -134,7 +135,7 @@ func NewCaptureCmd(configFlag *genericclioptions.ConfigFlags, rbFlags *genericcl
 
 				println("gathering profiles for pod: " + target.Name)
 
-				profiles, err := pprofutil.GatherAllByPod(context.Background(), DefaultForwardHost, target, localPort)
+				profiles, err := pprofutil.GatherAllByPod(context.Background(), logger, DefaultForwardHost, target, localPort)
 				if err != nil {
 					panic(err)
 				}

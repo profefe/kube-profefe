@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -12,7 +13,7 @@ type ProfefeCmdOptions struct {
 	genericclioptions.IOStreams
 }
 
-func NewProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
+func NewProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *cobra.Command {
 	flags := pflag.NewFlagSet("kubectl-profefe", pflag.ExitOnError)
 	pflag.CommandLine = flags
 
@@ -36,7 +37,7 @@ func NewProfefeCmd(streams genericclioptions.IOStreams) *cobra.Command {
 	kubeResouceBuilderFlags.WithAllNamespaces(false)
 	kubeResouceBuilderFlags.AddFlags(flags)
 
-	captureCmd := NewCaptureCmd(kubeConfigFlags, kubeResouceBuilderFlags, streams)
+	captureCmd := NewCaptureCmd(logger, kubeConfigFlags, kubeResouceBuilderFlags, streams)
 	flagsCapture := pflag.NewFlagSet("kubectl-profefe-capture", pflag.ExitOnError)
 	flagsCapture.StringVar(&OutputDir, "output-dir", "/tmp", "Directory where to place the profiles")
 	captureCmd.Flags().AddFlagSet(flagsCapture)

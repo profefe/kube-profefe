@@ -42,6 +42,8 @@ func NewGetProfilesCmd() *cobra.Command {
 			req.To = time.Now().UTC()
 			req.From = req.To.Add(-from).UTC()
 
+			fmt.Printf("FROM: %s - TO: %s\n", req.From.Format(time.RFC1123), req.To.Format(time.RFC1123))
+
 			resp, err := pClient.GetProfiles(ctx, req)
 			if err != nil {
 				return err

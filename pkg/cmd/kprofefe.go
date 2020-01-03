@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
-	backoff "github.com/cenkalti/backoff/v3"
 	"github.com/gianarb/kube-profefe/pkg/kubeutil"
 	"github.com/gianarb/kube-profefe/pkg/pprofutil"
 	"github.com/gianarb/kube-profefe/pkg/profefe"
@@ -112,13 +112,15 @@ func NewKProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *co
 					for {
 						pod, more := <-c
 						if more == false {
+							logger.Info("there are not pods to process. Closing goroutine...")
 							wg.Done()
 							return
 						}
+						ctx, cancel := context.WithTimeout(ctx, time.Second*40)
+						defer cancel()
 						do(ctx, logger, pClient, pod)
 					}
 				}(poolC)
-
 			}
 
 			for _, target := range selectedPods {
@@ -146,13 +148,7 @@ func do(ctx context.Context, l *zap.Logger, pClient *profefe.Client, target core
 	targetPort := pprofutil.GetProfefePortByPod(target)
 	var profiles map[pprofutil.Profile]*profile.Profile
 	var err error
-	err = backoff.Retry(func() error {
-		profiles, err = pprofutil.GatherAllByPod(context.Background(), fmt.Sprintf("http://%s", target.Status.PodIP), target, targetPort)
-		if err != nil {
-			return err
-		}
-		return nil
-	}, backoff.NewExponentialBackOff())
+	profiles, err = pprofutil.GatherAllByPod(ctx, logger, fmt.Sprintf("http://%s", target.Status.PodIP), target, targetPort)
 	if err != nil {
 		logger.Error("impossible to gather profiles", zap.Error(err))
 		return
@@ -160,7 +156,7 @@ func do(ctx context.Context, l *zap.Logger, pClient *profefe.Client, target core
 	for profileType, profile := range profiles {
 		profefeType := profefe.NewProfileTypeFromString(profileType.String())
 		if profefeType == profefe.UnknownProfile {
-			logger.Warn("Unknown profile type it can not be sent to profefe. Skip this profile")
+			logger.Warn("Unknown profile type it can not be sent to profefe. Skip this profile", zap.String("profile_type", profileType.String()))
 			continue
 		}
 		req := profefe.SavePprofRequest{
