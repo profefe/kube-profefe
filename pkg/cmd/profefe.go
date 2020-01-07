@@ -43,6 +43,7 @@ func NewProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *cob
 	captureCmd.Flags().AddFlagSet(flagsCapture)
 	rootCmd.AddCommand(captureCmd)
 	rootCmd.AddCommand(NewGetCmd())
+	rootCmd.AddCommand(NewLoadCmd())
 
 	return rootCmd
 }
