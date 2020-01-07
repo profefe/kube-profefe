@@ -31,6 +31,10 @@ The annotations are:
   profiles from that pod.
 * `profefe.com/port=8085` tells kube-profefe where to look for a pprof http
   server. By default it is 6060.
+* `profefe.com/service=frontend` tells kube-profefe the name of the service
+  usable to lookup the profile. If the annotation is not specified it uses the
+  pod name. My suggestion is to set this annotation because pods are ephemeral
+  and lookup by pod name may be hard to do.
 * `profefe.com/path=/debug/pprof` tells kube-profefe where to look for a pprof http
   server. By default it is `/debug/pprof`.
 
