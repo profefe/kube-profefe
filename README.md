@@ -53,6 +53,15 @@ work as kubectl plugin:
 kubectl profefe --help
 ```
 
+### Install via Krew
+
+[krew](https://github.com/kubernetes-sigs/krew) is a package manager for kubectl
+plugins and you can use it to install kube-profefe:
+
+```
+kubectl krew install profefe
+```
+
 ### Getting Started with kubectl-profefe
 
 Start minikube and deploy this pod:
