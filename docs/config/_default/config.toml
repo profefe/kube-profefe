@@ -1,6 +1,6 @@
 languageCode = "en-us"
 title = "kube-profefe"
-publishDir = "../../docs"
+publishDir = "../public"
 theme = ["kube-profefe", "kube"]
 ignoreFiles = [ "src/" ]
 
