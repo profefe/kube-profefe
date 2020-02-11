@@ -1,0 +1,62 @@
+{{ define "title"}} {{ .Site.Title}} {{end}}
+{{ define "header"}} {{ partial "header" .}} {{end}}
+{{ define "main"}}
+
+<div id="main">
+  <div id="hero">
+    <h1>{{.Site.Params.claim}}</h1>
+    <p>{{.Description}}</p>
+  </div>
+  <div id="action-buttons">
+    <a class="button primary big" href="https://github.com/profefe/kube-profefe/releases" onclick="_gaq.push(['_trackEvent', 'kube', 'download']);">Download</a>
+    <a class="button outline big" href="https://github.com/profefe/kube-profefe" onclick="_gaq.push(['_trackEvent', 'kube', 'github']);">View on Github</a>
+    <p>Docker images, batteries included.</p>
+  </div>
+  <div class="message focus" data-component="message"> <span class="close small"></span>
+    <a class="small " href="https://github.com/profefe/profefe">Profefe</a> from <a href="https://github.com/narqo">narqo</a> is an awesome <mark>Profiling tool for Go applications</mark>. <a class="small " href="https://github.com/profefe/kube-profefe">Kube-profefe</a> brings all the goodness to your own k8s cluster !
+  </div>
+  <div id="kube-features">
+    <div class="row gutters">
+      <div class="col col-4 item">
+        <figure>
+          <img alt="Cloud" height="48" src="{{ "/img/icon-cloud.svg" | relURL }}" width="48">
+        </figure>
+        <h3>Kubernetes friendly</h3>
+        <p>Thanks to <strong>kprofefe</strong>, you can consistently gather your profiling data and send it to profefe api server.</p>
+      </div>
+      <div class="col col-4 item">
+        <figure>
+          <img alt="Terminal" height="48" src="{{ "/img/icon-terminal.svg" | relURL }}" width="48">
+        </figure>
+        <h3>Command-line powered</h3>
+        <p>Kube-profefe provides <strong>kubectl-profefe</strong>, a <strong>kubectl</strong> plugin that helps you fetch and store pprof profiles.</p>
+      </div>
+      <div class="col col-4 item">
+        <figure>
+          <img alt="Markup" height="48" src="{{ "/img/icon-markup.svg" | relURL }}" width="48">
+        </figure>
+        <h3>Annotation strong</h3>
+        <p>Quickly and easily configure your containers thanks to powerful and convenient annotations.</p>
+      </div>
+    </div>
+    <div class="row gutters">
+      <div class="col col-4 item">
+        <h4>Continuous profiling. In your cluster.</h4>
+        <p>Keep your applications' performances under control easily and conveniently thanks to this tool.</p>
+      </div>
+      <div class="col col-4 item">
+        <h4>Ease of use</h4>
+        <p>kube-profefe integrates with kubectl and k8s's Scheduled Jobs. Putting it to work is as easy as writing some annotations.</p>
+      </div>
+      <div class="col col-4 item">
+        <h4>License</h4>
+        <p>
+          Kube-profefe is licensed under <a href="https://opensource.org/licenses/MIT">MIT</a>.<br>
+          Kube-profefe is absolutely free for personal or commercial use.
+        </p>
+    </div>
+  </div>
+</div>
+</div>
+{{ end }}
+{{ define "footer"}} {{ partial "footer" .}} {{end}}

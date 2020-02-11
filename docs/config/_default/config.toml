@@ -1,0 +1,9 @@
+languageCode = "en-us"
+title = "kube-profefe"
+publishDir = "../../docs"
+theme = ["kube-profefe", "kube"]
+ignoreFiles = [ "src/" ]
+
+[params]
+  claim = "Kubernetes continuous profiling made easy"
+  twitter = "https://twitter.com/gianarb"
