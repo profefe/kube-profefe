@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master
+    paths:
+      - 'docs/**'
+      - '.github/workflows/gh-pages.yml'
 
 jobs:
   build-deploy:
@@ -26,7 +29,8 @@ jobs:
           extended: true
 
       - name: Build
-        run: hugo --minify
+        run: hugo --minify --environment=production
+        working-directory: ./docs
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
