@@ -1,0 +1,23 @@
+languageCode = "en-us"
+title = "kube-profefe"
+publishDir = "../public"
+theme = ["kube-profefe", "kube"]
+ignoreFiles = []
+
+Paginate = 4
+[Params]
+  RSSLink = "/index.xml"
+  author = "gianarb"
+  claim = "Kubernetes continuous profiling made easy"
+  github = "https://github.com/profefe/kube-profefe"
+  twitter = "https://twitter.com/gianarb"
+  email = ""
+
+[[menu.main]]
+    name = "Docs"
+    weight = -100
+    url = "/docs/"
+[[menu.main]]
+    name = "Faq"
+    weight = -100
+    url = "/faq/"

@@ -1,0 +1,17 @@
+version: '3.7'
+
+services:
+  hugo:
+    container_name: kp_hugo
+    image: "peaceiris/hugo:v${HUGO_VERSION}"
+    ports:
+      - 1313:1313
+    volumes:
+      - ${PWD}/docs:/src
+    command:
+      - server
+      - --bind=0.0.0.0
+      - --buildDrafts
+      - --disableFastRender
+      - --environment=development
+      - --watch

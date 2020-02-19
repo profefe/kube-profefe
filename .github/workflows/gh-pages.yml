@@ -1,0 +1,39 @@
+name: github pages
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'docs/**'
+      - '.github/workflows/gh-pages.yml'
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1  # v2 does not have submodules option now
+        with:
+          submodules: true
+
+      - name: Read .env
+        id: hugo-version
+        run: |
+          . ./.env
+          echo "::set-output name=HUGO_VERSION::${HUGO_VERSION}"
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: '${{ steps.hugo-version.outputs.HUGO_VERSION }}'
+          extended: true
+
+      - name: Build
+        run: hugo --minify --environment=production
+        working-directory: ./docs
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          publish_dir: ./public
