@@ -2,11 +2,11 @@ name = "Kube-profefe"
 license = "MIT"
 licenselink = "https://github.com/profefe/kube-profefe/blob/master/LICENSE"
 description = "A Hugo theme for kube-profefe"
-homepage = "https://kube.profefe.com"
+homepage = "https://kubernetes.profefe.dev"
 tags = ["documentation", "multilingual", "customizable", "responsive", "docs"]
 features = []
 min_version = 0.63
 
 [author]
   name = "The Kube-profefe Authors"
-  homepage = "https://kube.profefe.com"
+  homepage = "https://kubernetes.profefe.dev"
