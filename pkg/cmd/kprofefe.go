@@ -13,12 +13,20 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.opentelemetry.io/otel/api/global"
+	"go.opentelemetry.io/otel/api/key"
+	"go.opentelemetry.io/otel/api/trace"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+)
+
+var (
+	totPodLenKey         = key.New("profefe.com/tot_pod_len")
+	totPerGoroutePodsLen = key.New("profefe.com/tot_pod_per_goroutine")
 )
 
 func NewKProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *cobra.Command {
@@ -38,98 +46,116 @@ func NewKProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *co
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			c.SetOutput(streams.ErrOut)
 		},
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
-			logger = logger.With(
-				zap.Strings("args", args),
-				zap.String("profefe-hostport", ProfefeHostPort),
-			)
-			var config *rest.Config
-			var err error
 
-			config, err = rest.InClusterConfig()
-			if err != nil {
-				config, err = kubeConfigFlags.ToRESTConfig()
-			}
-			if err != nil {
-				logger.Fatal("Impossible to retrive a kubernetes config", zap.Error(err))
-			}
-			if config == nil {
-				logger.Fatal("Impossible to retrive a kubernetes config")
-			}
-			// creates the clientset
-			clientset, err := kubernetes.NewForConfig(config)
-			if err != nil {
-				logger.Fatal("Kubernetes Client creation failed", zap.Error(err))
-			}
+			tracer := global.TraceProvider().Tracer("kprofefe")
 
-			// Contains the pool of pods that we need to gather profiles from
-			selectedPods := []corev1.Pod{}
+			return tracer.WithSpan(ctx, "run",
+				func(ctx context.Context) error {
 
-			namespace := kubeutil.GetNamespaceFromKubernetesFlags(kubeConfigFlags, kubeResouceBuilderFlags)
+					logger = logger.With(
+						zap.Strings("args", args),
+						zap.String("profefe-hostport", ProfefeHostPort),
+					)
+					var config *rest.Config
+					var err error
 
-			logger = logger.With(
-				zap.String("namespace", namespace),
-			)
-
-			// If the arguments are more than zero we should check by pod name
-			// (args == resourceName)
-			if len(args) > 0 {
-				for _, podName := range args {
-					pod, err := kubeutil.GetPodByName(clientset, namespace, podName, metav1.GetOptions{})
+					config, err = rest.InClusterConfig()
 					if err != nil {
-						logger.Warn("Pod not found", zap.Error(err))
-						continue
+						config, err = kubeConfigFlags.ToRESTConfig()
 					}
-					selectedPods = append(selectedPods, *pod)
-				}
-			} else {
-				selectedPods, err = kubeutil.GetSelectedPods(clientset, namespace, metav1.ListOptions{
-					LabelSelector: *kubeResouceBuilderFlags.LabelSelector,
-				})
-				if err != nil {
-					logger.Fatal("Error retrieving list of pods from kubernetes api", zap.Error(err))
-				}
-			}
+					if err != nil {
+						logger.Fatal("Impossible to retrive a kubernetes config", zap.Error(err))
+					}
+					if config == nil {
+						logger.Fatal("Impossible to retrive a kubernetes config")
+					}
+					// creates the clientset
+					clientset, err := kubernetes.NewForConfig(config)
+					if err != nil {
+						logger.Error("Kubernetes Client creation failed", zap.Error(err))
+						return err
+					}
 
-			// If the selectedPods are zero there is nothing to do.
-			if len(selectedPods) == 0 {
-				logger.Fatal("No pods to profile")
-			}
+					// Contains the pool of pods that we need to gather profiles from
+					selectedPods := []corev1.Pod{}
 
-			logger.Info("Starting to profile...", zap.Int("selected_pods_count", len(selectedPods)))
+					namespace := kubeutil.GetNamespaceFromKubernetesFlags(kubeConfigFlags, kubeResouceBuilderFlags)
 
-			pClient := profefe.NewClient(profefe.Config{
-				HostPort: ProfefeHostPort,
-			}, http.Client{})
+					logger = logger.With(
+						zap.String("namespace", namespace),
+					)
 
-			wg := sync.WaitGroup{}
-			wg.Add(10)
-
-			poolC := make(chan corev1.Pod)
-			for ii := 0; ii < 10; ii++ {
-				go func(c chan corev1.Pod) {
-					for {
-						pod, more := <-c
-						if more == false {
-							logger.Info("there are not pods to process. Closing goroutine...")
-							wg.Done()
-							return
+					// If the arguments are more than zero we should check by pod name
+					// (args == resourceName)
+					if len(args) > 0 {
+						for _, podName := range args {
+							pod, err := kubeutil.GetPodByName(clientset, namespace, podName, metav1.GetOptions{})
+							if err != nil {
+								logger.Warn("Pod not found", zap.Error(err))
+								continue
+							}
+							selectedPods = append(selectedPods, *pod)
 						}
-						ctx, cancel := context.WithTimeout(ctx, time.Second*40)
-						defer cancel()
-						do(ctx, logger, pClient, pod)
+					} else {
+						selectedPods, err = kubeutil.GetSelectedPods(clientset, namespace, metav1.ListOptions{
+							LabelSelector: *kubeResouceBuilderFlags.LabelSelector,
+						})
+						if err != nil {
+							logger.Error("Error retrieving list of pods from kubernetes api", zap.Error(err))
+							return err
+						}
 					}
-				}(poolC)
-			}
 
-			for _, target := range selectedPods {
-				poolC <- target
-			}
+					trace.SpanFromContext(ctx).SetAttributes(totPodLenKey.Int(len(selectedPods)))
 
-			close(poolC)
-			wg.Wait()
-			logger.Info("It is all done bye...")
+					// If the selectedPods are zero there is nothing to do.
+					if len(selectedPods) == 0 {
+						logger.Info("No pods to profile")
+						return nil
+					}
+
+					logger.Info("Starting to profile...", zap.Int("selected_pods_count", len(selectedPods)))
+
+					pClient := profefe.NewClient(profefe.Config{
+						HostPort: ProfefeHostPort,
+					}, http.Client{})
+
+					wg := sync.WaitGroup{}
+					wg.Add(10)
+
+					poolC := make(chan corev1.Pod)
+					for ii := 0; ii < 10; ii++ {
+						go func(c chan corev1.Pod, ctx context.Context, ii int) {
+							tracer.WithSpan(ctx, fmt.Sprintf("goroutine-%d", ii), func(ctx context.Context) error {
+								nPod := 0
+								for {
+									pod, more := <-c
+									if more == false {
+										logger.Info("there are not pods to process. Closing goroutine...")
+										wg.Done()
+										return nil
+									}
+									nPod++
+									trace.SpanFromContext(ctx).SetAttributes(totPerGoroutePodsLen.Int(nPod))
+									ctx, cancel := context.WithTimeout(ctx, time.Second*40)
+									defer cancel()
+									do(ctx, logger, pClient, pod)
+								}
+							})
+						}(poolC, ctx, ii)
+					}
+
+					for _, target := range selectedPods {
+						poolC <- target
+					}
+
+					close(poolC)
+					wg.Wait()
+					logger.Info("It is all done bye...")
+					return nil
+				})
 		},
 	}
 

@@ -15,9 +15,7 @@ require (
 	github.com/go-openapi/spec v0.18.0 // indirect
 	github.com/go-openapi/swag v0.17.2 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
-	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c // indirect
-	github.com/google/gofuzz v1.0.0 // indirect
 	github.com/google/pprof v0.0.0-20191105193234-27840fff0d09
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20181110185634-c63ab54fda8f // indirect
@@ -29,9 +27,11 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
 	github.com/testcontainers/testcontainers-go v0.0.10
+	go.opentelemetry.io/otel v0.2.3
 	go.uber.org/zap v1.13.0
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890 // indirect
 	google.golang.org/appengine v1.5.0 // indirect
+	google.golang.org/grpc v1.27.1
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/api v0.0.0-20190409021203-6e4e0e4f393b
 	k8s.io/apimachinery v0.0.0-20190404173353-6a84e37a896d
