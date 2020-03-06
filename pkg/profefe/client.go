@@ -244,6 +244,31 @@ type SavePprofResponse struct {
 	} `json:"body"`
 }
 
+// GET
+// /api/0/services
+func (c *Client) GetServices(ctx context.Context) (*GetServicesResponse, error) {
+	buf := bytes.NewBuffer([]byte{})
+	r, err := http.NewRequestWithContext(ctx, "GET", c.HostPort+"/api/0/services", buf)
+
+	resp, err := c.Do(r)
+	defer resp.Body.Close()
+	rr := &GetServicesResponse{}
+
+	err = json.NewDecoder(resp.Body).Decode(rr)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == http.StatusOK {
+		return rr, nil
+	}
+	return nil, fmt.Errorf(rr.Error)
+}
+
+type GetServicesResponse struct {
+	Body  []string
+	Error string `json:"error"`
+}
+
 func NewClient(config Config, httpClient http.Client) *Client {
 	if config.HostPort == "" {
 		config.HostPort = "http://localhost:10100"

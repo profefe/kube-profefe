@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"reflect"
 	"runtime"
@@ -67,5 +68,32 @@ func TestSavePprof(t *testing.T) {
 	}
 	if resp.Body.Service != funcName {
 		t.Errorf("expected serviec name %s got %s", funcName, resp.Body.Service)
+	}
+}
+
+func TestGetServices(t *testing.T) {
+	ctx := context.Background()
+
+	pprofServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Write([]byte(`{
+  "code": 200,
+  "body": [
+    "first",
+    "second"
+  ]
+}`))
+	}))
+
+	client := NewClient(Config{
+		HostPort:  pprofServer.URL,
+		UserAgent: "test",
+	}, *pprofServer.Client())
+
+	rr, err := client.GetServices(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rr.Body[0] != "first" {
+		t.Errorf("expect first got %s", rr.Body[0])
 	}
 }

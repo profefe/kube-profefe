@@ -13,5 +13,6 @@ func NewGetCmd() *cobra.Command {
 
 	cmd.AddCommand(NewGetProfilesCmd())
 	cmd.AddCommand(NewGetProfileTypesCmd())
+	cmd.AddCommand(NewGetServicesCmd())
 	return cmd
 }
