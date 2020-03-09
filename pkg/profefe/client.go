@@ -6,10 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/google/pprof/profile"
+	"go.opentelemetry.io/otel/api/global"
+	"go.opentelemetry.io/otel/plugin/httptrace"
 )
 
 type ProfileType int8
@@ -137,7 +140,7 @@ func (c *Client) GetProfiles(ctx context.Context, req GetProfilesRequest) (*GetP
 	}
 	r.URL.RawQuery = q.Encode()
 
-	resp, err := c.Do(r)
+	resp, err := c.makeHTTPRequest(r)
 	defer resp.Body.Close()
 	rr := &GetProfilesResponse{}
 
@@ -204,7 +207,7 @@ func (c *Client) SavePprof(ctx context.Context, req SavePprofRequest) (*SavePpro
 	r.Header.Add("UserAgent", c.UserAgent)
 	r.Header.Add("Content-Type", "application/octet-stream")
 
-	resp, err := c.Do(r)
+	resp, err := c.makeHTTPRequest(r)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +253,7 @@ func (c *Client) GetServices(ctx context.Context) (*GetServicesResponse, error) 
 	buf := bytes.NewBuffer([]byte{})
 	r, err := http.NewRequestWithContext(ctx, "GET", c.HostPort+"/api/0/services", buf)
 
-	resp, err := c.Do(r)
+	resp, err := c.makeHTTPRequest(r)
 	defer resp.Body.Close()
 	rr := &GetServicesResponse{}
 
@@ -277,4 +280,30 @@ func NewClient(config Config, httpClient http.Client) *Client {
 		config.UserAgent = "kubectl-profefe"
 	}
 	return &Client{config, httpClient}
+}
+
+func (c *Client) makeHTTPRequest(r *http.Request) (*http.Response, error) {
+	var resp *http.Response
+	tr := global.TraceProvider().Tracer("pprof/client")
+
+	pc := make([]uintptr, 10)
+	runtime.Callers(2, pc)
+	f := runtime.FuncForPC(pc[0])
+	file, line := f.FileLine(pc[0])
+
+	err := tr.WithSpan(r.Context(), fmt.Sprintf("%s:%d %s", file, line, f.Name()), func(ctx context.Context) error {
+		var err error
+		ctx, r = httptrace.W3C(ctx, r)
+		httptrace.Inject(ctx, r)
+		resp, err = c.Do(r)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
