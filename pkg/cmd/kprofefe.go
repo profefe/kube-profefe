@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -13,6 +14,11 @@ import (
 	"github.com/google/pprof/profile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.opentelemetry.io/otel/api/global"
+	"go.opentelemetry.io/otel/api/key"
+	"go.opentelemetry.io/otel/api/trace"
+	"go.opentelemetry.io/otel/exporters/trace/jaeger"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,6 +26,16 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
+
+var (
+	// totPodLenKey represents the number of pods that has to be scraped in this iteration
+	totPodLenKey = key.New("profefe.com/count_pods")
+	// totPerGoroutePodsLen represents the number of pods that a particualr goroutine handled
+	totPerGoroutePodsLen = key.New("profefe.com/count_pods_per_goroutine")
+	JaegerAddress        string
+)
+
+var Tracer string
 
 func NewKProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *cobra.Command {
 	flags := pflag.NewFlagSet("kprofefe", pflag.ExitOnError)
@@ -38,12 +54,43 @@ func NewKProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *co
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			c.SetOutput(streams.ErrOut)
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			ctx := context.Background()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if Tracer == "jaeger" {
+				logger.Info("Used the tracer output jaeger")
+				// Create Jaeger Exporter
+				exporter, err := jaeger.NewExporter(
+					jaeger.WithCollectorEndpoint(JaegerAddress),
+					jaeger.WithProcess(jaeger.Process{
+						ServiceName: "kprofefe",
+					}),
+				)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				// For demoing purposes, always sample. In a production application, you should
+				// configure this to a trace.ProbabilitySampler set at the desired
+				// probability.
+				tp, err := sdktrace.NewProvider(
+					sdktrace.WithConfig(sdktrace.Config{DefaultSampler: sdktrace.AlwaysSample()}),
+					sdktrace.WithSyncer(exporter))
+				if err != nil {
+					log.Fatal(err)
+				}
+				global.SetTraceProvider(tp)
+				defer exporter.Flush()
+			}
+
+			tracer := global.TraceProvider().Tracer("kprofefe")
+
+			ctx, span := tracer.Start(context.Background(), "kprofefe.RunE")
+			defer span.End()
+
 			logger = logger.With(
 				zap.Strings("args", args),
 				zap.String("profefe-hostport", ProfefeHostPort),
 			)
+
 			var config *rest.Config
 			var err error
 
@@ -52,15 +99,16 @@ func NewKProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *co
 				config, err = kubeConfigFlags.ToRESTConfig()
 			}
 			if err != nil {
-				logger.Fatal("Impossible to retrive a kubernetes config", zap.Error(err))
+				logger.Fatal("Impossible to retrieve a kubernetes config", zap.Error(err))
 			}
 			if config == nil {
-				logger.Fatal("Impossible to retrive a kubernetes config")
+				logger.Fatal("Impossible to retrieve a kubernetes config")
 			}
 			// creates the clientset
 			clientset, err := kubernetes.NewForConfig(config)
 			if err != nil {
-				logger.Fatal("Kubernetes Client creation failed", zap.Error(err))
+				logger.Error("Kubernetes Client creation failed", zap.Error(err))
+				return err
 			}
 
 			// Contains the pool of pods that we need to gather profiles from
@@ -88,13 +136,17 @@ func NewKProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *co
 					LabelSelector: *kubeResouceBuilderFlags.LabelSelector,
 				})
 				if err != nil {
-					logger.Fatal("Error retrieving list of pods from kubernetes api", zap.Error(err))
+					logger.Error("Error retrieving list of pods from kubernetes api", zap.Error(err))
+					return err
 				}
 			}
 
+			span.SetAttributes(totPodLenKey.Int(len(selectedPods)))
+
 			// If the selectedPods are zero there is nothing to do.
 			if len(selectedPods) == 0 {
-				logger.Fatal("No pods to profile")
+				logger.Info("No pods to profile")
+				return nil
 			}
 
 			logger.Info("Starting to profile...", zap.Int("selected_pods_count", len(selectedPods)))
@@ -108,19 +160,24 @@ func NewKProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *co
 
 			poolC := make(chan corev1.Pod)
 			for ii := 0; ii < 10; ii++ {
-				go func(c chan corev1.Pod) {
-					for {
-						pod, more := <-c
-						if more == false {
-							logger.Info("there are not pods to process. Closing goroutine...")
-							wg.Done()
-							return
+				go func(c chan corev1.Pod, ctx context.Context, ii int) {
+					tracer.WithSpan(ctx, fmt.Sprintf("goroutine-%d", ii), func(ctx context.Context) error {
+						nPod := 0
+						for {
+							pod, more := <-c
+							if more == false {
+								logger.Info("there are not pods to process. Closing goroutine...")
+								wg.Done()
+								return nil
+							}
+							nPod++
+							trace.SpanFromContext(ctx).SetAttributes(totPerGoroutePodsLen.Int(nPod))
+							ctx, cancel := context.WithTimeout(ctx, time.Second*40)
+							defer cancel()
+							do(ctx, logger, pClient, pod)
 						}
-						ctx, cancel := context.WithTimeout(ctx, time.Second*40)
-						defer cancel()
-						do(ctx, logger, pClient, pod)
-					}
-				}(poolC)
+					})
+				}(poolC, ctx, ii)
 			}
 
 			for _, target := range selectedPods {
@@ -130,11 +187,14 @@ func NewKProfefeCmd(logger *zap.Logger, streams genericclioptions.IOStreams) *co
 			close(poolC)
 			wg.Wait()
 			logger.Info("It is all done bye...")
+			return nil
 		},
 	}
 
 	flags.AddFlagSet(cmd.PersistentFlags())
+	flags.StringVar(&Tracer, "tracer", "dev", `where to send telemetry`)
 	flags.StringVar(&ProfefeHostPort, "profefe-hostport", "http://localhost:10100", `where profefe is located`)
+	flags.StringVar(&JaegerAddress, "--tracer.jaeger-address", "http://localhost:14268/api/traces", "Set the destionation for your traces")
 	kubeConfigFlags.AddFlags(flags)
 	kubeResouceBuilderFlags.WithLabelSelector("")
 	kubeResouceBuilderFlags.WithAllNamespaces(false)

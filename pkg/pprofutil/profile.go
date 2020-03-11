@@ -6,9 +6,12 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"runtime"
 	"time"
 
 	"github.com/google/pprof/profile"
+	"go.opentelemetry.io/otel/api/global"
+	"go.opentelemetry.io/otel/plugin/httptrace"
 )
 
 // Profile defines the types of profiles available.
@@ -129,18 +132,37 @@ func join(addr string, path string) (*url.URL, error) {
 }
 
 func get(ctx context.Context, u *url.URL) (*profile.Profile, error) {
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
+	tr := global.TraceProvider().Tracer("pprof/client")
 
-	req = req.WithContext(ctx)
+	pc := make([]uintptr, 10)
+	runtime.Callers(2, pc)
+	f := runtime.FuncForPC(pc[0])
+	file, line := f.FileLine(pc[0])
 
-	resp, err := http.DefaultClient.Do(req)
+	var p *profile.Profile
+
+	err = tr.WithSpan(ctx, fmt.Sprintf("%s:%d %s", file, line, f.Name()), func(ctx context.Context) error {
+		var err error
+		ctx, req = httptrace.W3C(ctx, req)
+		httptrace.Inject(ctx, req)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return err
+		}
+
+		defer resp.Body.Close()
+		p, err = NewProfile(resp.Body)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	defer resp.Body.Close()
-	return NewProfile(resp.Body)
+	return p, nil
 }
