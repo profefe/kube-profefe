@@ -10,7 +10,7 @@ Paginate = 4
   author = "gianarb"
   claim = "Kubernetes continuous profiling made easy"
   github = "https://github.com/profefe/kube-profefe"
-  twitter = "https://twitter.com/gianarb"
+  twitter = "gianarb"
   email = ""
 
 [[menu.main]]
