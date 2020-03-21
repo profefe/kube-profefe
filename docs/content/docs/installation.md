@@ -11,8 +11,21 @@ This project is made of two components. A kubectl plugin and the collector.
 You can download both of them from the [release
 page](https://github.com/profefe/kube-profefe/releases) via GitHub.
 
+## kubectl profefe
+
 The kubectl plugin usually runs from your laptop, and it is built for multiple
 platforms: Linux, Mac.
+
+### Install via Krew
+
+[krew](https://github.com/kubernetes-sigs/krew) is a package manager for kubectl
+plugins and you can use it to install kube-profefe:
+
+```
+kubectl krew install profefe
+```
+
+## kprofefe
 
 The collector called `kprofefe` usually runs as a cronjob in Kubernetes. You can
 find an example of it in `./contrib/kubernetes/kprofefe.yaml`.
