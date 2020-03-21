@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: profefe
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: kprofefe-allnamespaces
+  namespace: profefe
+spec:
+  concurrencyPolicy: Replace
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - args:
+            # This cronjob will scrape all the pods that has the right
+            # annotations across all the namespaces
+            - --all-namespaces
+            # This url represents the profefe API location.
+            - --profefe-hostport
+            - http://profefe-collector:10100
+            image: profefe/kprofefe
+            imagePullPolicy: IfNotPresent
+            name: kprofefe
+  schedule: '*/10 * * * *'
+  successfulJobsHistoryLimit: 3

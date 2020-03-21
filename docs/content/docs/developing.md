@@ -7,75 +7,55 @@ toc = true
 bref = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur neque risus, maximus malesuada massa eget, auctor vulputate ipsum. Suspendisse magna libero, iaculis non ante nec, laoreet faucibus ligula. Suspendisse sed enim urna. Quisque libero dui, porttitor eu diam quis, elementum mattis nunc."
 +++
 
-<h3 class="section-head" id="h-basic-template"><a href="#h-basic-template">Basic Template</a></h3>
+This project is written in Go and it uses [go
+module](https://blog.golang.org/using-go-modules) as a dependency manager.
 
-<p>With Kube, you can set up your web framework and be on your way in under a minute. Just add this code to your web page for the basic template to take effect immediately.</p>
+The tool chain I use is very simple and it does not require anything more than
+what Go requires.
 
-<pre class="code"><span class="hljs-meta">&lt;!DOCTYPE html&gt;</span>
-<span class="hljs-tag">&lt;<span class="hljs-name">html</span>&gt;</span>
-<span class="hljs-tag">&lt;<span class="hljs-name">head</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">title</span>&gt;</span>Basic Template<span class="hljs-tag">&lt;/<span class="hljs-name">title</span>&gt;</span>
+```bash
+$ go build cmd/kprofefe
+$ go test ./...
+$ go vet ./...
+```
 
-    <span class="hljs-tag">&lt;<span class="hljs-name">meta</span> <span class="hljs-attr">charset</span>=<span class="hljs-string">"utf-8"</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">meta</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"viewport"</span> <span class="hljs-attr">content</span>=<span class="hljs-string">"width=device-width, initial-scale=1"</span>&gt;</span>
+And so on.
 
-    <span class="hljs-comment">&lt;!-- Kube CSS --&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">link</span> <span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span> <span class="hljs-attr">href</span>=<span class="hljs-string">"assets/css/kube.css"</span>&gt;</span>
+## Delivery
 
-<span class="hljs-tag">&lt;/<span class="hljs-name">head</span>&gt;</span>
-<span class="hljs-tag">&lt;<span class="hljs-name">body</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">h1</span>&gt;</span>Hello, world!<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span>
+This project is in continuous delivery and it uses
+[GoReleaser](https://github.com/goreleaser/goreleaser) with GitHub Actions.
 
-    <span class="hljs-comment">&lt;!-- Kube JS + jQuery are used for some functionality, but are not required for the basic setup --&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"assets/js/kube.js"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
-<span class="hljs-tag">&lt;/<span class="hljs-name">body</span>&gt;</span>
-<span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span></pre>
+Every time a new tag is pushed the CI runs GoReleser. It updates the changelog
+in the release page and it builds binaries for multiple architectures and docker
+images.
 
+Docker images are available on [Docker Hub](https://hub.docker.com/u/profefe).
 
-<h3 class="section-head" id="h-supported-browsers"><a href="#h-supported-browsers">Supported Browsers</a></h3>
+Locally you can build a release anytime, even if you do not have a tag with:
 
-<p>Kube supports the latest, stable releases of all major browsers:</p>
-<ul>
-    <li>Latest Chrome</li>
-    <li>Latest Firefox</li>
-    <li>Latest Safari</li>
-    <li>Latest Opera</li>
-    <li>Microsoft Edge</li>
-    <li>Internet Explorer 11</li>
-</ul>
+```
+$ goreleaser release --snapshot --rm-dist --skip-publish
+```
 
+The process will create binaries and Docker images.
 
-<h3 class="section-head" id="h-development"><a href="#h-development">Development with Kube</a></h3>
+## Continuous Integration
 
-<p>Kube has been designed to help you with web development, that's why it's so easy to use Kube when building websites. To move forward quickly and efficiently, just link <code>kube.scss</code> from Kube package: this file contains variables, mixins and everything you need to simplify daily routine tasks.
-</p>
+The continuous integration is managed via GitHub Actions.
 
-<p>
-    For example, import kube.scss into your master.scss styles file, which you will later compile into <code>master.css</code>:
-</p>
+## KinD
 
-<pre class="code"><span class="hljs-comment">// master.scss</span>
-@<span class="hljs-keyword">import</span> <span class="hljs-string">"dist/scss/kube.scss"</span>;</pre>
+I use [kubernetes-sigs/kind](https://github.com/kubernetes-sigs/kind) where I
+have to spin up a temporary kubernetes cluster for my test. It requires Docker.
 
-<p>
-    Now all Kube's variables and mixins are readily available in <code>master.scss</code>,
-    and you can use them whenever needed. For instance, here's how one of examples:
-</p>
+```bash
+$ kind create cluster
+```
 
-<pre class="code"><span class="hljs-comment">// master.scss</span>
-<span class="hljs-keyword">@import</span> <span class="hljs-string">"dist/scss/kube.scss"</span>;
+I can run locally `kprofefe` to see how it works but it won't be able to
+actually scrape profiles because it tries to reach the pprof endpoint using POD
+IPs, and they are not reachable from my local laptop.
 
-<span class="hljs-selector-id">#sidebar</span> {
-    <span class="hljs-variable">@include</span> flex-item-width(<span class="hljs-number">200px</span>);
-}</pre>
-
-<p>Also, you could use settings from <code>variables.scss</code>:</p>
-
-
-<pre class="code"><span class="hljs-comment">// master.scss</span>
-@<span class="hljs-keyword">import</span> <span class="hljs-string">"dist/scss/kube.scss"</span>;
-
-<span class="hljs-selector-id">#my-layout</span> {
-    <span class="hljs-attribute">padding</span>: <span class="hljs-variable">$base-line</span>;
-}</pre>
+If you would like to test the entire lifecycle you have to deploy your version
+of kprofefe in Kubernetes. I do not have a workflow to share about it yet.
