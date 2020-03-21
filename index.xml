@@ -12,4 +12,5 @@ $ go test ./...
 $ go vet ./...
 And so on.
 Delivery This project is in continuous delivery and it uses GoReleaser with GitHub Actions.
-Every time a new tag is pushed the CI runs GoReleser.</description></item><item><title>About</title><link>/about/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/about/</guid><description>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur neque risus, maximus malesuada massa eget, auctor vulputate ipsum. Suspendisse magna libero, iaculis non ante nec, laoreet faucibus ligula. Suspendisse sed enim urna. Quisque libero dui, porttitor eu diam quis, elementum mattis nunc.</description></item></channel></rss>
+Every time a new tag is pushed the CI runs GoReleser.</description></item><item><title>About</title><link>/about/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/about/</guid><description>Profefe is a project developed by @narqo. I was looking for a solution to do continuous profiling and I realized his code was well abstracted and comfortable to extend. The API server was already done and I decided to write an integration with Kubernetes.
+The current maintainer is Gianluca aka @gianarb. Contributions are welcome on github.com/profefe/kube-profefe</description></item></channel></rss>
