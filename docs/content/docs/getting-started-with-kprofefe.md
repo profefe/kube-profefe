@@ -9,8 +9,9 @@ bref = ""
 
 ## Goal
 
-The end goal here is to deploy everything in kubernetes, and to get profiles
-pushed from our pod into [profefe](https://github.com/profefe/profefe).
+The end goal here is to deploy a continuous profiling infrastructure in
+kubernetes, and to get profiles from our pod into
+[profefe](https://github.com/profefe/profefe) via kprofefe.
 
 ## Prerequisites
 
