@@ -3,7 +3,6 @@ module github.com/gianarb/kube-profefe
 go 1.13
 
 require (
-	github.com/Azure/go-autorest v11.1.2+incompatible // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20190410145444-c548f45dcf1d // indirect
