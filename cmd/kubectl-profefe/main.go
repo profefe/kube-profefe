@@ -6,7 +6,7 @@ import (
 	"github.com/gianarb/kube-profefe/pkg/cmd"
 	"go.uber.org/zap"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 func main() {
