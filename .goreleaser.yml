@@ -5,40 +5,40 @@ before:
     # you may remove this if you don't use vgo
     - go mod download
 builds:
-- id: "kubectl-profefe"
-  main: ./cmd/kubectl-profefe
-  binary: kubectl-profefe
-  env:
-    - CGO_ENABLED=0
-- id: "kprofefe"
-  main: ./cmd/kprofefe
-  binary: kprofefe
-  env:
-    - CGO_ENABLED=0
+  - id: "kubectl-profefe"
+    main: ./cmd/kubectl-profefe
+    binary: kubectl-profefe
+    env:
+      - CGO_ENABLED=0
+  - id: "kprofefe"
+    main: ./cmd/kprofefe
+    binary: kprofefe
+    env:
+      - CGO_ENABLED=0
 archives:
-- replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
-    386: i386
-    amd64: x86_64
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+    name_template: "{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 snapshot:
   name_template: "{{ .Tag }}-next"
 changelog:
   sort: asc
   filters:
     exclude:
-    - '^docs:'
-    - '^test:'
+      - "^docs:"
+      - "^test:"
 dockers:
-  -
-    binaries:
-    - kprofefe
+  - binaries:
+      - kprofefe
     goos: linux
     goarch: amd64
     image_templates:
-    - "profefe/kprofefe:latest"
-    - "profefe/kprofefe:{{ .Tag }}"
+      - "profefe/kprofefe:latest"
+      - "profefe/kprofefe:{{ .Tag }}"
     dockerfile: Dockerfile.gorelease
