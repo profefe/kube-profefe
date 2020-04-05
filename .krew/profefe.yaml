@@ -3,7 +3,7 @@ kind: Plugin
 metadata:
   name: profefe
 spec:
-  version: { { .TagName } }
+  version: {{ .TagName }}
   homepage: https://github.com/profefe/kube-profefe
   shortDescription: Gather and manage pprof profiles from running pods
   description: |
