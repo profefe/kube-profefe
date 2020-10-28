@@ -12,8 +12,8 @@ bref = ""
 This project is a bridge between profefe and Kubernetes. At the moment it serves
 two different binaries:
 
-* `kubectl-profefe` a kubectl plugin that helps you to `caputre` pprof profiles,
-  storing them locally or in pprofefe. It uses `port-forwarding` to expose the
+* `kubectl-profefe` a kubectl plugin that helps you to `capture` pprof profiles,
+  storing them locally or in profefe. It uses `port-forwarding` to expose the
   pprof port locally.
 * `kprofefe` is a cli that you can run as a cronjob in your kubernetes cluster.
   It discovers running pods in your clusters, it downloads profiles and it
