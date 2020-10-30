@@ -4,8 +4,7 @@ description = "Contributing to kube-profefe"
 weight = 30
 draft = false
 toc = true
-bref = "An overview of the kube-profefe delivery and testing toolchain for
-contributors"
+bref = "An overview of the kube-profefe delivery and testing toolchain for contributors"
 +++
 
 This project is written in Go and it uses [go
