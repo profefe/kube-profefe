@@ -55,7 +55,7 @@ Apply this spec via `kubectl apply -f <path file.yaml>`. It will create a
 profefe namespace, and it will deploy the
 [profefe](https://github.com/profefe/profefe) as a deployment with its service.
 
-This installation it's not for production.
+This installation is not for production.
 
 ```yaml
 apiVersion: v1

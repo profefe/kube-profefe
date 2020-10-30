@@ -4,7 +4,8 @@ description = "Contributing to kube-profefe"
 weight = 30
 draft = false
 toc = true
-bref = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur neque risus, maximus malesuada massa eget, auctor vulputate ipsum. Suspendisse magna libero, iaculis non ante nec, laoreet faucibus ligula. Suspendisse sed enim urna. Quisque libero dui, porttitor eu diam quis, elementum mattis nunc."
+bref = "An overview of the kube-profefe delivery and testing toolchain for
+contributors"
 +++
 
 This project is written in Go and it uses [go
@@ -53,7 +54,7 @@ have to spin up a temporary kubernetes cluster for my test. It requires Docker.
 $ kind create cluster
 ```
 
-I can run locally `kprofefe` to see how it works but it won't be able to
+I can run `kprofefe` locally to see how it works but it won't be able to
 actually scrape profiles because it tries to reach the pprof endpoint using POD
 IPs, and they are not reachable from my local laptop.
 
