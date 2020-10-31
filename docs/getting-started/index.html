@@ -26,7 +26,7 @@ KubeDNS is running at https://127.0.0.1:42659/api/v1/namespaces/kube-system/serv
 To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 </code></pre><h3 id=deploy-profefe>Deploy profefe</h3><p>Apply this spec via <code>kubectl apply -f &lt;path file.yaml></code>. It will create a
 profefe namespace, and it will deploy the
-<a href=https://github.com/profefe/profefe>profefe</a> as a deployment with its service.</p><p>This installation it&rsquo;s not for production.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#66d9ef>apiVersion</span>: v1
+<a href=https://github.com/profefe/profefe>profefe</a> as a deployment with its service.</p><p>This installation is not for production.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#66d9ef>apiVersion</span>: v1
 <span style=color:#66d9ef>kind</span>: Namespace
 <span style=color:#66d9ef>metadata</span>:
   <span style=color:#66d9ef>name</span>: profefe
